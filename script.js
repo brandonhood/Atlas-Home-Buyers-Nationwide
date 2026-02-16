@@ -1,21 +1,22 @@
 /**
- * Atlas Home Buyers — PPC Landing Page JavaScript
+ * Atlas Home Buyers — Hybrid Landing Page JavaScript
  *
  * Features:
- * - Google Places API autocomplete for address field
+ * - Dynamic city insertion from URL parameter
+ * - Two-step form with progressive disclosure
  * - Real-time form validation
  * - Phone number auto-formatting (US format)
- * - Form submission handling (FormSpree / webhook)
+ * - Form submission handling (webhook)
  * - Google Analytics 4 event tracking
  * - Facebook Pixel event tracking
  * - UTM parameter capture
  * - Exit-intent popup
- * - Countdown timer
  * - Smooth scroll
  * - Scroll-triggered animations
  * - Sticky header on scroll
  * - Mobile sticky CTA
  * - FAQ accordion
+ * - Testimonial "Read more" toggle
  */
 
 (function () {
@@ -23,59 +24,44 @@
 
     /* ============================================
        CONFIGURATION
-       TODO: Update these values before deployment
        ============================================ */
-    const CONFIG = {
+    var CONFIG = {
         // Form submission endpoint
-        // TODO: Replace with your FormSpree endpoint or custom webhook URL
-        formEndpoint: 'https://formspree.io/f/YOUR_FORM_ID',
+        // Replace with actual GoHighLevel webhook URL
+        formEndpoint: '[GOHIGHLEVEL_WEBHOOK_URL_TBD]',
 
-        // Google Analytics 4 Measurement ID
-        // TODO: Replace with your GA4 measurement ID
-        ga4MeasurementId: 'G-XXXXXXXXXX',
-
-        // Phone number for click-to-call
-        phoneNumber: '+18005550199',
-
-        // Countdown timer duration in minutes
-        countdownMinutes: 10,
-
-        // Exit popup delay (ms) — minimum time on page before showing
+        // Exit popup delay (ms)
         exitPopupDelay: 5000,
 
         // Thank you page URL
-        thankYouPage: '/thank-you.html',
-
-        // Target cities for dynamic headline insertion
-        targetCities: [
-            'Atlanta', 'Charlotte', 'Jacksonville', 'Memphis',
-            'Indianapolis', 'Columbus', 'San Antonio', 'Phoenix',
-            'Las Vegas', 'Tampa'
-        ]
+        thankYouPage: '/thank-you.html'
     };
 
 
     /* ============================================
        DOM ELEMENTS
        ============================================ */
-    const dom = {
+    var dom = {
         leadForm: document.getElementById('leadForm'),
         propertyAddress: document.getElementById('propertyAddress'),
         fullName: document.getElementById('fullName'),
         phoneNumber: document.getElementById('phoneNumber'),
         emailAddress: document.getElementById('emailAddress'),
+        transactionalConsent: document.getElementById('transactionalConsent'),
         privacyConsent: document.getElementById('privacyConsent'),
-        smsOptIn: document.getElementById('smsOptIn'),
+        stepOneBtn: document.getElementById('stepOneBtn'),
         submitBtn: document.getElementById('submitBtn'),
+        formStep1: document.getElementById('formStep1'),
+        formStep2: document.getElementById('formStep2'),
+        formSuccess: document.getElementById('formSuccess'),
         stickyHeader: document.getElementById('stickyHeader'),
         mobileCta: document.getElementById('mobileCta'),
         exitPopup: document.getElementById('exitPopup'),
         exitOverlay: document.getElementById('exitOverlay'),
         exitClose: document.getElementById('exitClose'),
         exitCta: document.getElementById('exitCta'),
-        countdownTimer: document.getElementById('countdownTimer'),
-        urgencyBanner: document.getElementById('urgencyBanner'),
-        cityName: document.getElementById('cityName'),
+        cityInsert: document.getElementById('cityInsert'),
+        hiddenCity: document.getElementById('hiddenCity'),
         faqList: document.querySelector('.faq__list')
     };
 
@@ -84,19 +70,12 @@
        UTILITY FUNCTIONS
        ============================================ */
 
-    /**
-     * Get URL parameter by name
-     */
     function getUrlParam(name) {
-        const params = new URLSearchParams(window.location.search);
+        var params = new URLSearchParams(window.location.search);
         return params.get(name) || '';
     }
 
-    /**
-     * Safely push events to dataLayer (GTM / GA4)
-     */
     function trackEvent(eventName, eventParams) {
-        // console.log('Track event:', eventName, eventParams);
         try {
             if (typeof window.dataLayer !== 'undefined') {
                 window.dataLayer.push({
@@ -108,15 +87,11 @@
                 window.gtag('event', eventName, eventParams);
             }
         } catch (e) {
-            // console.error('Analytics tracking error:', e);
+            // Analytics tracking error
         }
     }
 
-    /**
-     * Safely fire Facebook Pixel event
-     */
     function trackFbEvent(eventName, params) {
-        // console.log('FB Pixel event:', eventName, params);
         try {
             if (typeof window.fbq === 'function') {
                 if (params) {
@@ -126,19 +101,18 @@
                 }
             }
         } catch (e) {
-            // console.error('Facebook Pixel error:', e);
+            // Facebook Pixel error
         }
     }
 
-    /**
-     * Debounce function
-     */
     function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
+        var timeout;
+        return function () {
+            var context = this;
+            var args = arguments;
             clearTimeout(timeout);
             timeout = setTimeout(function () {
-                func.apply(this, args);
+                func.apply(context, args);
             }, wait);
         };
     }
@@ -146,8 +120,6 @@
 
     /* ============================================
        UTM PARAMETER CAPTURE
-       Captures UTM parameters and ad click IDs
-       from the URL and stores them in hidden fields
        ============================================ */
     function captureUtmParams() {
         var utmFields = {
@@ -168,13 +140,11 @@
             }
         });
 
-        // Also store landing page URL
         var landingPageEl = document.getElementById('landingPage');
         if (landingPageEl) {
             landingPageEl.value = window.location.href;
         }
 
-        // Persist UTMs in sessionStorage for cross-page tracking
         try {
             var utms = {};
             Object.keys(utmFields).forEach(function (param) {
@@ -194,47 +164,51 @@
 
     /* ============================================
        DYNAMIC CITY NAME INSERTION
-       Updates H1 based on UTM parameters or geo
+       Detects ?city= parameter and updates page
        ============================================ */
     function initCityName() {
-        // Check for city in UTM term or campaign
-        var utmTerm = getUrlParam('utm_term') || '';
-        var utmCampaign = getUrlParam('utm_campaign') || '';
-        var city = getUrlParam('city') || '';
+        var city = getUrlParam('city');
 
-        // Try to match a city from the URL params
-        if (city) {
-            updateCityName(city);
+        if (!city) {
+            // No city parameter — remove the span or leave blank
+            if (dom.cityInsert) {
+                dom.cityInsert.textContent = '';
+            }
+            // Update page title without city
+            document.title = 'Sell Your House Fast | Fair Cash Offer in 24 Hours | Atlas Home Buyers';
             return;
         }
 
-        var searchStr = (utmTerm + ' ' + utmCampaign).toLowerCase();
-        for (var i = 0; i < CONFIG.targetCities.length; i++) {
-            if (searchStr.indexOf(CONFIG.targetCities[i].toLowerCase()) !== -1) {
-                updateCityName(CONFIG.targetCities[i]);
-                return;
-            }
+        // Capitalize properly
+        city = city.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+
+        // Insert city into headline
+        if (dom.cityInsert) {
+            dom.cityInsert.textContent = ' in ' + city;
         }
 
-        // Default: keep "House" in headline
-    }
+        // Update page title with city
+        document.title = 'Sell Your House Fast ' + city + ' | Fair Cash Offer in 24 Hours | Atlas Home Buyers';
 
-    function updateCityName(city) {
-        if (dom.cityName) {
-            dom.cityName.textContent = city;
+        // Update meta description
+        var metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content',
+                'Get a fair cash offer for your ' + city + ' house in 24 hours. No repairs, no fees, no waiting. We buy houses in any condition. Close in 7-14 days.');
+        }
+
+        // Store city in hidden field
+        if (dom.hiddenCity) {
+            dom.hiddenCity.value = city;
         }
     }
 
 
     /* ============================================
        PHONE NUMBER AUTO-FORMATTING
-       Formats phone input as (XXX) XXX-XXXX
        ============================================ */
     function formatPhoneNumber(value) {
-        // Strip all non-digit characters
         var digits = value.replace(/\D/g, '');
-
-        // Limit to 10 digits (US)
         digits = digits.substring(0, 10);
 
         if (digits.length === 0) {
@@ -257,7 +231,6 @@
             var formatted = formatPhoneNumber(e.target.value);
             e.target.value = formatted;
 
-            // Try to maintain cursor position
             var newLength = formatted.length;
             var diff = newLength - prevLength;
             var newPos = cursorPos + diff;
@@ -266,7 +239,6 @@
             e.target.setSelectionRange(newPos, newPos);
         });
 
-        // Prevent non-numeric characters on keypress
         dom.phoneNumber.addEventListener('keypress', function (e) {
             var char = String.fromCharCode(e.which || e.keyCode);
             if (!/[\d\b]/.test(char) && e.which !== 8 && e.which !== 0) {
@@ -278,63 +250,40 @@
 
     /* ============================================
        FORM VALIDATION
-       Real-time validation with helpful error messages
        ============================================ */
     var validators = {
         propertyAddress: function (value) {
-            if (!value.trim()) {
-                return 'Please enter your property address.';
-            }
-            if (value.trim().length < 5) {
-                return 'Please enter a complete street address.';
-            }
+            if (!value.trim()) return 'Please enter your property address.';
+            if (value.trim().length < 5) return 'Please enter a complete street address.';
             return '';
         },
-
         fullName: function (value) {
-            if (!value.trim()) {
-                return 'Please enter your name.';
-            }
-            if (value.trim().length < 2) {
-                return 'Please enter your full name.';
-            }
+            if (!value.trim()) return 'Please enter your name.';
+            if (value.trim().length < 2) return 'Please enter your full name.';
             return '';
         },
-
         phoneNumber: function (value) {
             var digits = value.replace(/\D/g, '');
-            if (!digits) {
-                return 'Please enter your phone number.';
-            }
-            if (digits.length < 10) {
-                return 'Please enter a valid 10-digit phone number.';
-            }
+            if (!digits) return 'Please enter your phone number.';
+            if (digits.length < 10) return 'Please enter a valid 10-digit phone number.';
             return '';
         },
-
         emailAddress: function (value) {
-            if (!value.trim()) {
-                return 'Please enter your email address.';
-            }
-            // Basic email regex
+            if (!value.trim()) return 'Please enter your email address.';
             var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(value.trim())) {
-                return 'Please enter a valid email address.';
-            }
+            if (!emailRegex.test(value.trim())) return 'Please enter a valid email address.';
             return '';
         },
-
+        transactionalConsent: function (checked) {
+            if (!checked) return 'Please agree to receive transactional messages.';
+            return '';
+        },
         privacyConsent: function (checked) {
-            if (!checked) {
-                return 'Please agree to the Privacy Policy to continue.';
-            }
+            if (!checked) return 'Please agree to the Privacy Policy to continue.';
             return '';
         }
     };
 
-    /**
-     * Validate a single field and update UI
-     */
     function validateField(field, validatorName) {
         var value = field.type === 'checkbox' ? field.checked : field.value;
         var error = validators[validatorName](value);
@@ -346,35 +295,26 @@
             field.classList.add('error');
             field.classList.remove('valid');
             field.setAttribute('aria-invalid', 'true');
-            if (errorEl) {
-                errorEl.textContent = error;
-            }
+            if (errorEl) errorEl.textContent = error;
             return false;
         } else {
             field.classList.remove('error');
-            if (field.type !== 'checkbox') {
-                field.classList.add('valid');
-            }
+            if (field.type !== 'checkbox') field.classList.add('valid');
             field.setAttribute('aria-invalid', 'false');
-            if (errorEl) {
-                errorEl.textContent = '';
-            }
+            if (errorEl) errorEl.textContent = '';
             return true;
         }
     }
 
-    /**
-     * Validate entire form
-     */
-    function validateForm() {
+    function validateStep2() {
         var isValid = true;
         var firstInvalid = null;
 
         var fields = [
-            { el: dom.propertyAddress, validator: 'propertyAddress' },
             { el: dom.fullName, validator: 'fullName' },
             { el: dom.phoneNumber, validator: 'phoneNumber' },
             { el: dom.emailAddress, validator: 'emailAddress' },
+            { el: dom.transactionalConsent, validator: 'transactionalConsent' },
             { el: dom.privacyConsent, validator: 'privacyConsent' }
         ];
 
@@ -390,23 +330,17 @@
             }
         });
 
-        // Focus first invalid field
-        if (firstInvalid) {
-            firstInvalid.focus();
-        }
-
+        if (firstInvalid) firstInvalid.focus();
         return isValid;
     }
 
-    /**
-     * Set up real-time validation listeners
-     */
     function initValidation() {
         var fieldMap = [
             { el: dom.propertyAddress, validator: 'propertyAddress', event: 'blur' },
             { el: dom.fullName, validator: 'fullName', event: 'blur' },
             { el: dom.phoneNumber, validator: 'phoneNumber', event: 'blur' },
             { el: dom.emailAddress, validator: 'emailAddress', event: 'blur' },
+            { el: dom.transactionalConsent, validator: 'transactionalConsent', event: 'change' },
             { el: dom.privacyConsent, validator: 'privacyConsent', event: 'change' }
         ];
 
@@ -416,7 +350,6 @@
                     validateField(field.el, field.validator);
                 });
 
-                // Also validate on input after first blur (for better UX)
                 if (field.event === 'blur') {
                     var hasBlurred = false;
                     field.el.addEventListener('blur', function () {
@@ -434,8 +367,45 @@
 
 
     /* ============================================
+       TWO-STEP FORM
+       Step 1: Address only
+       Step 2: Contact details + consent
+       ============================================ */
+    function initTwoStepForm() {
+        if (!dom.stepOneBtn || !dom.formStep1 || !dom.formStep2) return;
+
+        dom.stepOneBtn.addEventListener('click', function () {
+            // Validate address
+            if (!validateField(dom.propertyAddress, 'propertyAddress')) {
+                dom.propertyAddress.focus();
+                return;
+            }
+
+            // Track step 1 completion
+            trackEvent('form_step1_complete', {
+                event_category: 'form',
+                event_label: 'address_entered'
+            });
+
+            trackFbEvent('InitiateCheckout', {
+                content_name: 'Lead Form Step 1'
+            });
+
+            // Show step 2
+            dom.formStep1.style.display = 'none';
+            dom.formStep2.style.display = 'block';
+            dom.formStep2.setAttribute('aria-hidden', 'false');
+
+            // Focus first field in step 2
+            if (dom.fullName) {
+                dom.fullName.focus();
+            }
+        });
+    }
+
+
+    /* ============================================
        FORM SUBMISSION
-       Handles form submit via fetch API
        ============================================ */
     function initFormSubmission() {
         if (!dom.leadForm) return;
@@ -443,8 +413,8 @@
         dom.leadForm.addEventListener('submit', function (e) {
             e.preventDefault();
 
-            // Validate
-            if (!validateForm()) {
+            // Validate step 2 fields
+            if (!validateStep2()) {
                 trackEvent('form_validation_error', {
                     event_category: 'form',
                     event_label: 'validation_failed'
@@ -461,16 +431,20 @@
                 dom.submitBtn.textContent = 'Submitting...';
             }
 
-            // Collect form data
             var formData = new FormData(dom.leadForm);
 
-            // Track form start event
             trackEvent('form_submit_attempt', {
                 event_category: 'form',
                 event_label: 'lead_form'
             });
 
-            // Submit to endpoint
+            // If endpoint is still placeholder, show success locally
+            if (CONFIG.formEndpoint.indexOf('TBD') !== -1) {
+                // Demo mode: show success
+                showFormSuccess();
+                return;
+            }
+
             fetch(CONFIG.formEndpoint, {
                 method: 'POST',
                 body: formData,
@@ -479,173 +453,133 @@
                 }
             })
             .then(function (response) {
-                if (response.ok) {
-                    return response.json();
-                }
+                if (response.ok) return response.json();
                 throw new Error('Form submission failed');
             })
             .then(function () {
-                // Track successful lead
                 trackEvent('generate_lead', {
                     event_category: 'form',
                     event_label: 'lead_submitted',
                     value: 1
                 });
 
-                // Facebook Pixel Lead event
                 trackFbEvent('Lead', {
                     content_name: 'Cash Offer Request',
                     content_category: 'Lead Form'
                 });
 
-                // Google Ads conversion tracking
+                // Google Ads conversion tracking placeholder
                 if (typeof window.gtag === 'function') {
-                    // TODO: Replace with your actual Google Ads conversion ID and label
-                    window.gtag('event', 'conversion', {
-                        'send_to': 'AW-XXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXX'
-                    });
+                    // Replace with actual Google Ads conversion ID
+                    // window.gtag('event', 'conversion', { 'send_to': 'AW-XXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXX' });
                 }
 
-                // Redirect to thank you page
                 window.location.href = CONFIG.thankYouPage;
             })
             .catch(function (error) {
-                // console.error('Form submission error:', error);
-
                 trackEvent('form_submit_error', {
                     event_category: 'form',
                     event_label: error.message || 'unknown_error'
                 });
 
-                // Reset form state
                 dom.leadForm.classList.remove('submitting');
                 if (dom.submitBtn) {
                     dom.submitBtn.disabled = false;
                     dom.submitBtn.textContent = 'Get My Cash Offer Now';
                 }
 
-                // Show user-friendly error
-                alert('There was a problem submitting your information. Please try again or call us at (800) 555-0199.');
+                alert('There was a problem submitting your information. Please try again or call us directly.');
+            });
+        });
+    }
+
+    function showFormSuccess() {
+        trackEvent('generate_lead', {
+            event_category: 'form',
+            event_label: 'lead_submitted',
+            value: 1
+        });
+
+        trackFbEvent('Lead', {
+            content_name: 'Cash Offer Request',
+            content_category: 'Lead Form'
+        });
+
+        // Hide step 2 and heading, show success
+        if (dom.formStep2) dom.formStep2.style.display = 'none';
+        var heading = document.querySelector('.lead-form__heading');
+        if (heading) heading.style.display = 'none';
+
+        if (dom.formSuccess) {
+            dom.formSuccess.style.display = 'block';
+            dom.formSuccess.setAttribute('aria-hidden', 'false');
+        }
+    }
+
+
+    /* ============================================
+       TESTIMONIAL "READ MORE" TOGGLE
+       ============================================ */
+    function initTestimonialReadMore() {
+        var buttons = document.querySelectorAll('.testimonial__read-more');
+
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var textEl = this.previousElementSibling;
+                if (!textEl) return;
+
+                var isExpanded = this.getAttribute('aria-expanded') === 'true';
+                var fullText = textEl.getAttribute('data-full-text');
+
+                if (!fullText) return;
+
+                if (isExpanded) {
+                    // Collapse: truncate text
+                    var truncated = fullText.substring(0, fullText.indexOf('.', 80) + 1) || fullText.substring(0, 120);
+                    textEl.innerHTML = truncated + '&hellip;';
+                    this.textContent = 'Read more';
+                    this.setAttribute('aria-expanded', 'false');
+                } else {
+                    // Expand: show full text
+                    textEl.textContent = fullText;
+                    this.textContent = 'Read less';
+                    this.setAttribute('aria-expanded', 'true');
+                }
+
+                trackEvent('testimonial_read_more', {
+                    event_category: 'engagement',
+                    event_label: isExpanded ? 'collapse' : 'expand'
+                });
             });
         });
     }
 
 
     /* ============================================
-       GOOGLE PLACES AUTOCOMPLETE
-       ============================================ */
-    // This function is called by the Google Maps API callback
-    window.initAutocomplete = function () {
-        if (!dom.propertyAddress) return;
-
-        try {
-            var autocomplete = new google.maps.places.Autocomplete(dom.propertyAddress, {
-                types: ['address'],
-                componentRestrictions: { country: 'us' }
-            });
-
-            autocomplete.addListener('place_changed', function () {
-                var place = autocomplete.getPlace();
-                if (place && place.formatted_address) {
-                    dom.propertyAddress.value = place.formatted_address;
-                    validateField(dom.propertyAddress, 'propertyAddress');
-
-                    trackEvent('address_autocomplete_selected', {
-                        event_category: 'form',
-                        event_label: 'address_selected'
-                    });
-                }
-            });
-        } catch (e) {
-            // console.error('Google Places Autocomplete error:', e);
-            // Form still works without autocomplete
-        }
-    };
-
-
-    /* ============================================
-       COUNTDOWN TIMER
-       Shows urgency countdown in form header
-       ============================================ */
-    function initCountdownTimer() {
-        if (!dom.countdownTimer) return;
-
-        var totalSeconds = CONFIG.countdownMinutes * 60;
-
-        // Check sessionStorage for existing timer
-        try {
-            var storedEnd = sessionStorage.getItem('atlas_countdown_end');
-            if (storedEnd) {
-                var remaining = Math.floor((parseInt(storedEnd, 10) - Date.now()) / 1000);
-                if (remaining > 0) {
-                    totalSeconds = remaining;
-                } else {
-                    // Timer expired, restart
-                    sessionStorage.removeItem('atlas_countdown_end');
-                }
-            } else {
-                // Store end time
-                sessionStorage.setItem('atlas_countdown_end', String(Date.now() + totalSeconds * 1000));
-            }
-        } catch (e) {
-            // sessionStorage not available
-        }
-
-        function updateTimer() {
-            if (totalSeconds <= 0) {
-                if (dom.urgencyBanner) {
-                    dom.urgencyBanner.style.display = 'none';
-                }
-                return;
-            }
-
-            var minutes = Math.floor(totalSeconds / 60);
-            var seconds = totalSeconds % 60;
-            dom.countdownTimer.textContent =
-                String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-
-            totalSeconds--;
-        }
-
-        updateTimer();
-        setInterval(updateTimer, 1000);
-    }
-
-
-    /* ============================================
        STICKY HEADER
-       Shows/hides on scroll
        ============================================ */
     function initStickyHeader() {
         if (!dom.stickyHeader) return;
 
-        var lastScroll = 0;
         var heroHeight = document.querySelector('.hero')
             ? document.querySelector('.hero').offsetHeight
             : 400;
 
         window.addEventListener('scroll', debounce(function () {
-            var currentScroll = window.pageYOffset;
-
-            if (currentScroll > heroHeight) {
+            if (window.pageYOffset > heroHeight) {
                 dom.stickyHeader.classList.add('visible');
             } else {
                 dom.stickyHeader.classList.remove('visible');
             }
-
-            lastScroll = currentScroll;
         }, 10), { passive: true });
     }
 
 
     /* ============================================
        MOBILE STICKY CTA
-       Shows bottom CTA bar on mobile when scrolled
        ============================================ */
     function initMobileCta() {
         if (!dom.mobileCta) return;
-
-        // Only on mobile
         if (window.innerWidth >= 768) return;
 
         var heroHeight = document.querySelector('.hero')
@@ -664,8 +598,6 @@
 
     /* ============================================
        EXIT-INTENT POPUP
-       Triggers when mouse leaves viewport (desktop)
-       or on back-button behavior (mobile)
        ============================================ */
     function initExitPopup() {
         if (!dom.exitPopup) return;
@@ -673,18 +605,23 @@
         var hasShown = false;
         var pageLoadTime = Date.now();
 
-        // Desktop: mouse leave detection
+        // Check if already shown this session
+        try {
+            if (sessionStorage.getItem('atlas_exit_popup_shown') === 'true') {
+                hasShown = true;
+            }
+        } catch (e) {
+            // sessionStorage not available
+        }
+
         document.addEventListener('mouseout', function (e) {
             if (hasShown) return;
             if (Date.now() - pageLoadTime < CONFIG.exitPopupDelay) return;
-
-            // Check if mouse is leaving the viewport from the top
             if (e.clientY <= 0 && e.relatedTarget === null) {
                 showExitPopup();
             }
         });
 
-        // Close popup handlers
         if (dom.exitClose) {
             dom.exitClose.addEventListener('click', hideExitPopup);
         }
@@ -697,7 +634,6 @@
             });
         }
 
-        // Close on Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && !dom.exitPopup.hidden) {
                 hideExitPopup();
@@ -715,7 +651,6 @@
                 event_label: 'exit_intent'
             });
 
-            // Store that we've shown it this session
             try {
                 sessionStorage.setItem('atlas_exit_popup_shown', 'true');
             } catch (e) {
@@ -731,15 +666,6 @@
                 event_category: 'engagement',
                 event_label: 'exit_intent'
             });
-        }
-
-        // Don't show if already shown this session
-        try {
-            if (sessionStorage.getItem('atlas_exit_popup_shown') === 'true') {
-                hasShown = true;
-            }
-        } catch (e) {
-            // sessionStorage not available
         }
     }
 
@@ -764,17 +690,13 @@
                         otherBtn.setAttribute('aria-expanded', 'false');
                         var otherId = otherBtn.getAttribute('aria-controls');
                         var otherAnswer = document.getElementById(otherId);
-                        if (otherAnswer) {
-                            otherAnswer.hidden = true;
-                        }
+                        if (otherAnswer) otherAnswer.hidden = true;
                     }
                 });
 
                 // Toggle current
                 this.setAttribute('aria-expanded', String(!expanded));
-                if (answer) {
-                    answer.hidden = expanded;
-                }
+                if (answer) answer.hidden = expanded;
 
                 trackEvent('faq_toggle', {
                     event_category: 'engagement',
@@ -788,7 +710,6 @@
 
     /* ============================================
        SMOOTH SCROLL
-       Handles smooth scrolling for anchor links
        ============================================ */
     function initSmoothScroll() {
         var scrollLinks = document.querySelectorAll('.scroll-to-form, a[href^="#"]');
@@ -831,11 +752,9 @@
 
 
     /* ============================================
-       SCROLL ANIMATIONS (Fade-in on scroll)
-       Uses IntersectionObserver for performance
+       SCROLL ANIMATIONS
        ============================================ */
     function initScrollAnimations() {
-        // Respect reduced motion preference
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             document.querySelectorAll('.fade-in').forEach(function (el) {
                 el.classList.add('visible');
@@ -844,7 +763,6 @@
         }
 
         if (!('IntersectionObserver' in window)) {
-            // Fallback: show all elements
             document.querySelectorAll('.fade-in').forEach(function (el) {
                 el.classList.add('visible');
             });
@@ -871,7 +789,6 @@
 
     /* ============================================
        SCROLL DEPTH TRACKING
-       Tracks how far users scroll (25%, 50%, 75%, 100%)
        ============================================ */
     function initScrollTracking() {
         var milestones = [25, 50, 75, 100];
@@ -899,7 +816,6 @@
 
     /* ============================================
        FORM INTERACTION TRACKING
-       Tracks which fields users interact with
        ============================================ */
     function initFormTracking() {
         var trackedFields = {};
@@ -926,7 +842,6 @@
             });
         });
 
-        // Track form start (first interaction)
         if (dom.leadForm) {
             var formStarted = false;
             dom.leadForm.addEventListener('focusin', function () {
@@ -936,67 +851,10 @@
                         event_category: 'form',
                         event_label: 'lead_form'
                     });
-
-                    trackFbEvent('InitiateCheckout', {
-                        content_name: 'Lead Form Start'
-                    });
                 }
             });
         }
     }
-
-
-    /* ============================================
-       TIME ON PAGE TRACKING
-       ============================================ */
-    function initTimeTracking() {
-        var intervals = [30, 60, 120, 300]; // seconds
-        var tracked = {};
-
-        setInterval(function () {
-            var elapsed = Math.floor((Date.now() - window.performance.timing.navigationStart) / 1000);
-
-            intervals.forEach(function (interval) {
-                if (elapsed >= interval && !tracked[interval]) {
-                    tracked[interval] = true;
-                    trackEvent('time_on_page', {
-                        event_category: 'engagement',
-                        event_label: interval + 's',
-                        value: interval
-                    });
-                }
-            });
-        }, 5000);
-    }
-
-
-    /* ============================================
-       MULTI-STEP FORM ALTERNATIVE
-       Uncomment to use a progressive disclosure form
-
-    function initMultiStepForm() {
-        var steps = [
-            { fields: ['propertyAddress'], label: 'Step 1 of 3: Property Address' },
-            { fields: ['fullName', 'phoneNumber'], label: 'Step 2 of 3: Your Info' },
-            { fields: ['emailAddress'], label: 'Step 3 of 3: Email' }
-        ];
-
-        var currentStep = 0;
-
-        // Hide all fields except first step
-        steps.forEach(function(step, index) {
-            if (index > 0) {
-                step.fields.forEach(function(fieldId) {
-                    var group = document.getElementById(fieldId).closest('.form-group');
-                    if (group) group.style.display = 'none';
-                });
-            }
-        });
-
-        // Add next/prev buttons
-        // ... implementation continues
-    }
-       ============================================ */
 
 
     /* ============================================
@@ -1007,8 +865,9 @@
         initCityName();
         initPhoneFormatting();
         initValidation();
+        initTwoStepForm();
         initFormSubmission();
-        initCountdownTimer();
+        initTestimonialReadMore();
         initStickyHeader();
         initMobileCta();
         initExitPopup();
@@ -1017,18 +876,13 @@
         initScrollAnimations();
         initScrollTracking();
         initFormTracking();
-        initTimeTracking();
 
-        // Track page view
         trackEvent('landing_page_view', {
             event_category: 'pageview',
             event_label: window.location.pathname
         });
-
-        // console.log('Atlas Home Buyers landing page initialized');
     }
 
-    // Run when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

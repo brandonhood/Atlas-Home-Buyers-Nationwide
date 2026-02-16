@@ -9,13 +9,13 @@
     <link rel="stylesheet" href="styles.css">
 
     <!-- Google Tag Manager -->
-    <!-- TODO: Replace GTM-XXXXXXX with your actual GTM container ID -->
+    <!-- TODO: Replace [GTM_CONTAINER_ID_TBD] with your actual GTM container ID -->
     <script>
     (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-XXXXXXX');
+    })(window,document,'script','dataLayer','[GTM_CONTAINER_ID_TBD]');
     </script>
 
     <!-- Facebook Pixel -->
@@ -29,18 +29,18 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', 'XXXXXXXXXXXXXXXX');
+    fbq('init', '[FACEBOOK_PIXEL_ID_TBD]');
     fbq('track', 'PageView');
     </script>
 
     <!-- GA4 -->
-    <!-- TODO: Replace G-XXXXXXXXXX with your actual GA4 measurement ID -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <!-- TODO: Replace [GA4_MEASUREMENT_ID_TBD] with your actual GA4 measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=[GA4_MEASUREMENT_ID_TBD]"></script>
     <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX');
+    gtag('config', '[GA4_MEASUREMENT_ID_TBD]');
 
     // Track thank-you page conversion
     gtag('event', 'conversion', {
@@ -133,7 +133,7 @@
 <body>
     <!-- Google Tag Manager (noscript) -->
     <noscript>
-        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+        <iframe src="https://www.googletagmanager.com/ns.html?id=[GTM_CONTAINER_ID_TBD]"
                 height="0" width="0" style="display:none;visibility:hidden"></iframe>
     </noscript>
 
@@ -167,7 +167,8 @@
                 </a>
 
                 <p class="thank-you__phone">
-                    Or call us directly: <a href="tel:+18005550199">(800) 555-0199</a>
+                    <!-- Replace [PHONE_NUMBER_TBD] with actual CallRail tracking number -->
+                    Or call us directly: <a href="tel:[PHONE_NUMBER_TBD]">[PHONE_NUMBER_TBD]</a>
                 </p>
             </div>
 
