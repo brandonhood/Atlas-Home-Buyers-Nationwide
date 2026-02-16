@@ -1,0 +1,59 @@
+# Netlify Configuration for Atlas Home Buyers Landing Page
+
+[build]
+  # No build command needed — static site
+  publish = "."
+
+# Custom headers for performance and security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+    # Cache control for HTML — short cache for fast updates
+    Cache-Control = "public, max-age=300, stale-while-revalidate=600"
+
+# Long cache for static assets (CSS, JS)
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Long cache for images
+[[headers]]
+  for = "/assets/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Redirect: form submission success to thank-you page
+[[redirects]]
+  from = "/thank-you"
+  to = "/thank-you.html"
+  status = 200
+
+# Redirect: www to non-www (or vice versa — adjust as needed)
+# TODO: Uncomment and configure for your domain
+# [[redirects]]
+#   from = "https://www.atlashomebuyers.com/*"
+#   to = "https://atlashomebuyers.com/:splat"
+#   status = 301
+#   force = true
+
+# SPA fallback — redirect 404s to index (if needed)
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
+
+# Netlify Forms processing (if using Netlify Forms instead of FormSpree)
+# Add data-netlify="true" to the <form> tag in index.html to enable

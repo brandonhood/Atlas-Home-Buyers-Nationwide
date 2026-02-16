@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You! | Atlas Home Buyers</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Google Tag Manager -->
+    <!-- TODO: Replace GTM-XXXXXXX with your actual GTM container ID -->
+    <script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-XXXXXXX');
+    </script>
+
+    <!-- Facebook Pixel -->
+    <!-- TODO: Replace XXXXXXXXXXXXXXXX with your actual Facebook Pixel ID -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'XXXXXXXXXXXXXXXX');
+    fbq('track', 'PageView');
+    </script>
+
+    <!-- GA4 -->
+    <!-- TODO: Replace G-XXXXXXXXXX with your actual GA4 measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+
+    // Track thank-you page conversion
+    gtag('event', 'conversion', {
+        'event_category': 'form',
+        'event_label': 'thank_you_page_view'
+    });
+    </script>
+
+    <style>
+        .thank-you {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: var(--space-lg);
+            background: linear-gradient(135deg, #0066CC 0%, #004C99 100%);
+            color: var(--color-white);
+        }
+        .thank-you__container {
+            max-width: 600px;
+        }
+        .thank-you__icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--space-lg);
+            background-color: var(--color-success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .thank-you__title {
+            font-size: var(--font-size-4xl);
+            font-weight: 800;
+            margin-bottom: var(--space-md);
+            line-height: 1.2;
+        }
+        .thank-you__text {
+            font-size: var(--font-size-lg);
+            opacity: 0.9;
+            margin-bottom: var(--space-xl);
+            line-height: 1.6;
+        }
+        .thank-you__steps {
+            text-align: left;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: var(--space-lg);
+            border-radius: var(--border-radius-lg);
+            margin-bottom: var(--space-xl);
+        }
+        .thank-you__steps h3 {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--space-md);
+        }
+        .thank-you__steps ol {
+            list-style: decimal;
+            padding-left: var(--space-lg);
+        }
+        .thank-you__steps li {
+            margin-bottom: var(--space-sm);
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        .thank-you__cta {
+            margin-bottom: var(--space-lg);
+        }
+        .thank-you__phone {
+            font-size: var(--font-size-xl);
+            margin-top: var(--space-md);
+        }
+        .thank-you__phone a {
+            color: var(--color-white);
+            text-decoration: underline;
+        }
+        /* Calendly embed placeholder */
+        .calendly-embed {
+            background-color: var(--color-white);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            margin-top: var(--space-xl);
+        }
+        .calendly-embed__placeholder {
+            padding: var(--space-2xl);
+            text-align: center;
+            color: var(--color-text-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript>
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+                height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+
+    <main class="thank-you">
+        <div class="thank-you__container">
+            <div class="thank-you__icon" aria-hidden="true">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+
+            <h1 class="thank-you__title">We Got Your Information!</h1>
+
+            <p class="thank-you__text">
+                Thank you for reaching out. Our team is already reviewing your property details and preparing your cash offer.
+            </p>
+
+            <div class="thank-you__steps">
+                <h3>What Happens Next:</h3>
+                <ol>
+                    <li>Our team reviews your property information</li>
+                    <li>We'll call you within 24 hours with your cash offer</li>
+                    <li>If you accept, we can close in as few as 7 days</li>
+                </ol>
+            </div>
+
+            <div class="thank-you__cta">
+                <p>Want to speed things up? Schedule a call now:</p>
+
+                <!-- TODO: Replace with your actual Calendly link -->
+                <a href="https://calendly.com/atlas-home-buyers/consultation" class="btn btn--primary btn--cta" target="_blank" rel="noopener">
+                    Schedule My Call
+                </a>
+
+                <p class="thank-you__phone">
+                    Or call us directly: <a href="tel:+18005550199">(800) 555-0199</a>
+                </p>
+            </div>
+
+            <!-- Calendly Inline Embed Placeholder -->
+            <!-- TODO: Uncomment and replace with your Calendly embed
+            <div class="calendly-embed">
+                <div class="calendly-inline-widget"
+                     data-url="https://calendly.com/atlas-home-buyers/consultation"
+                     style="min-width:320px;height:630px;">
+                </div>
+                <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+            </div>
+            -->
+        </div>
+    </main>
+</body>
+</html>
